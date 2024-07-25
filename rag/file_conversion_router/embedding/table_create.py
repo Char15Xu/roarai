@@ -34,11 +34,11 @@ def execute_all(cursor, sql, args=None):
     results = cursor.execute(sql, args).fetchall()
     return list(map(lambda x: dict(x), results))
 
-def insert(cur, data_list):
+def insert(cur, table_name, data_list):
     execute_all(
         cur,
-        """
-        insert into embeddings(rowid, embedding)
+        f"""
+        insert into {table_name}(rowid, embedding)
             select
                 key, 
                 value
@@ -47,15 +47,15 @@ def insert(cur, data_list):
 
 def create_table(filename, pickle_data):
     if filename.endswith('.pkl'):
-        sql_filename = os.path.splitext(filename)[0] + '.db'
+        table_name = os.path.splitext(filename)[0] + '.db'
     else:
         raise ValueError("The provided file does not have a .pkl extension")
-    db = connect(sql_filename)
+    db = connect(table_name)
     cur = db.cursor()
-    cur.execute('Drop table IF EXISTS embeddings;')
+    cur.execute('DROP TABLE IF EXISTS?;', (table_name,))
     cur.execute('create virtual table embeddings using vss0(embedding(1024) factory="Flat,IDMap2" metric_type=INNER_PRODUCT);')
     embedding_list = pickle_data['embedding_list']
     denses = [embedding['dense_vecs'].tolist() for embedding in embedding_list]
-    insert(cur, denses)
+    insert(cur, table_name, denses)
     db.commit()
     return cur

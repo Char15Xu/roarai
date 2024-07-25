@@ -13,12 +13,13 @@ import threading
 import urllib.parse
 import json
 import sys
+import sqlite3
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../../'))
 sys.path.insert(0, parent_directory)
 from rag.file_conversion_router.embedding.table_create import create_table
 
 # Set the environment variable to use the SQL database
-SQLDB = False
+SQLDB = True
 
 class Message(BaseModel):
     role: str
@@ -135,7 +136,9 @@ def local_selector(messages:List[Message],stream=True,rag=True,course=None):
         query_embed = embedding_model.encode(user_message, return_dense=True, return_sparse=True,
                                                 return_colbert_vecs=True)
         if SQLDB:
-            cur = create_table(picklefile, data_loaded)
+            current_dir = os.path.dirname(__file__)
+            db_path = os.path.join(current_dir, "../../../../../rag/file_conversion_router/embedding/recursive_seperate_none_BGE_embedding_400_106_full.pkl")
+            cur = sqlite3.connect(db_path)
             query_vector = query_embed['dense_vecs'].tolist()
             query_vector_json = json.dumps(query_vector)
             cur.execute("""
